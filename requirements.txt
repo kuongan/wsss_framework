@@ -3,9 +3,8 @@ torchvision
 opencv-python
 ttach
 tqdm
-chainercv
 grad-cam
-sklearn
+scikit-learn
 pyyaml
 timm
 tensorboard

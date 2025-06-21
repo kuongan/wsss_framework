@@ -32,7 +32,7 @@ def _work(pid, dataset, args):
 
     # Log path
     if args.weights_name is None:
-        weights_path = os.path.join(args.log_path, 'final.pth')
+        weights_path = os.path.join(args.log_path, 'best.pth')
     else:
         weights_path = args.weights_name
 
@@ -58,7 +58,6 @@ def _work(pid, dataset, args):
         CAM = EigenGradCAM
     elif args.cam_type == 'fullgrad':
         CAM = FullGrad
-
     # split dataset
     databin = dataset[pid]
     n_gpus = torch.cuda.device_count()
@@ -77,7 +76,7 @@ def _work(pid, dataset, args):
 
         # Function which makes CAM
         target_tr = get_reshape_transform(args.network)
-        make_cam = CAM(model=model, target_layers=[target_layer], use_cuda=True, reshape_transform=target_tr)
+        make_cam = CAM(model=model, target_layers=[target_layer], reshape_transform=target_tr)
         # save CAM per threshold
         eval_thres = np.arange(args.eval_thres_start, args.eval_thres_limit, args.eval_thres_jump)
         # Generate CAM

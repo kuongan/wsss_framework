@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument("--dataset", default="voc12", choices=['voc12', 'coco', 'cityscapes'], type=str, 
                         help="Choose the dataset which to train.")
     # VOC
-    parser.add_argument("--dataset_root", default="../../dataset/VOC/", type=str,
+    parser.add_argument("--dataset_root", default="/content/wsss_framework/data/voc12/VOC2012", type=str,
                         help="Path to VOC 2012 Devkit, must contain ./JPEGImages as subdirectory.")
     # COCO2014(TBD)
     # parser.add_argument("--coco_root", default="../../dataset/COCO", type=str,

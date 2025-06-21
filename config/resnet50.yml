@@ -1,5 +1,5 @@
 network: resnet50
-log_name: resnet50_voc12_1
+log_name: resnet50_voc12_gradcam
 log_dir: ./result
 log_overwrite: True
 use_tensorboard: True
@@ -7,7 +7,6 @@ distributed_multiprocessing: False
 distributed_url: tcp://127.0.0.1:10010
 distributed_backend: nccl
 dataset: voc12
-dataset_root: ../../dataset/VOC/
 seed: 42
 labeled_ratio: 1.0
 train_list: ./data/voc12/train_aug.txt
@@ -17,8 +16,8 @@ verbose_interval: 3
 train:
   input_size: 512
   crop_size: 480
-  batch_size: 16
-  epochs: 30
+  batch_size: 32
+  epochs: 20
   loss: 
     name: MultiLabelSoftMarginLoss
     kwargs:
@@ -37,10 +36,13 @@ eval:
     - 1.5
     - 2.0
 optim:
-  name: PolyOptimizer
+  name: AdamW
   kwargs:
-    lr: 0.03 #0.1
-    momentum: 0.9
-    weight_decay: 0.0005
+    lr: 0.0001
+    weight_decay: 0.01
     # (N(dataset) // batch_size) * epochs
-    max_step: 33100
+scheduler:
+  name: CosineAnnealingLR
+  kwargs:
+    T_max: 20    
+    eta_min: 2e-6  
