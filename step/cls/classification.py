@@ -53,7 +53,7 @@ def _work(pid, args, dataset_train, dataset_val, dataset_train_ulb):
                                   num_workers=args.num_workers, shuffle=True, sampler=None, pin_memory=True)
 
     # Get Model
-    model = get_model(args.network, pretrained=True, num_classes=args.voc_class_num-1)
+    model = get_model(args.network, pretrained=True, num_classes=args.coco_class_num)
     
     # Optimizer
     optimizer, scheduler = get_cls_optimzier(args, model)

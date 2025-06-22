@@ -296,7 +296,7 @@ class VOCClassification(VOCDetection):
         one_hot[ann] = 1
 
         return img, one_hot
-        
+
 class COCOClassification(CocoDetection):
     def __init__(self, root, annFile, dataset_list=None, transform=None):
         super().__init__(root, annFile, transform)
@@ -309,9 +309,30 @@ class COCOClassification(CocoDetection):
 
         if dataset_list is not None:
             with open(dataset_list, 'r') as f:
-                img_names = set(f.read().split())
-            img_id_map = {v['file_name']: k for k, v in self.coco.imgs.items()}
-            self.ids = [img_id_map[name] for name in img_names if name in img_id_map]
+                img_id_strings = f.read().strip().split()
+            
+            # FIX: Convert string IDs to integers for proper matching
+            target_img_ids = []
+            for id_str in img_id_strings:
+                try:
+                    # Convert string ID to integer (removes leading zeros)
+                    target_img_ids.append(int(id_str))
+                except ValueError:
+                    print(f"Warning: Could not convert '{id_str}' to integer, skipping")
+                    continue
+            
+            # FIX: Use integer IDs directly instead of filename mapping
+            all_img_ids = set(self.coco.getImgIds())
+            self.ids = [img_id for img_id in target_img_ids if img_id in all_img_ids]
+            
+            print(f"COCOClassification: Loaded {len(self.ids)} images out of {len(target_img_ids)} requested")
+            
+            if len(self.ids) == 0:
+                print("ERROR: No matching image IDs found!")
+                print(f"Sample target IDs: {target_img_ids[:5]}")
+                print(f"Sample available IDs: {list(all_img_ids)[:5]}")
+        else:
+            self.ids = list(self.coco.imgs.keys())
 
     def __getitem__(self, index):
         img, target = super().__getitem__(index)
@@ -321,7 +342,6 @@ class COCOClassification(CocoDetection):
             label_idx = self.cat_id_to_idx[cat_id]
             label[label_idx] = 1
         return img, label
-
         
 class COCO2014Segmentation(VisionDataset):
     def __init__(self, root, annFile, dataset_list=None, transform=None, target_transform=None):
@@ -379,14 +399,14 @@ def coco_train_dataset(args, img_list, mode='cls'):
     if mode == 'cls':
         dataset = COCOClassification(
             root=os.path.join(args.dataset_root, 'train2014'),
-            annFile=os.path.join(args.dataset_root, 'train2014/annotations/instances_train2014.json'),
+            annFile=os.path.join(args.dataset_root, 'annotations/instances_train2014.json'),
             dataset_list=img_list,
             transform=tfs_train
         )
     elif mode == 'seg':
         dataset = COCO2014Segmentation(
             root=os.path.join(args.dataset_root, 'train2014'),
-            annFile=os.path.join(args.dataset_root, 'train2014/annotations/instances_train2014.json'),
+            annFile=os.path.join(args.dataset_root, 'annotations/instances_train2014.json'),
             dataset_list=img_list,
             transform=tfs_train,
             target_transform=tfs_target
@@ -404,14 +424,14 @@ def coco_val_dataset(args, img_list, mode='cls'):
     if mode == 'cls':
         dataset = COCOClassification(
             root=os.path.join(args.dataset_root, 'val2014'),
-            annFile=os.path.join(args.dataset_root, 'val2014/annotations/instances_val2014.json'),
+            annFile=os.path.join(args.dataset_root, 'annotations/instances_val2014.json'),
             dataset_list=img_list,
             transform=tfs_val
         )
     elif mode == 'seg':
         dataset = COCO2014Segmentation(
             root=os.path.join(args.dataset_root, 'val2014'),
-            annFile=os.path.join(args.dataset_root, 'val2014/annotations/instances_val2014.json'),
+            annFile=os.path.join(args.dataset_root, 'annotations/instances_val2014.json'),
             dataset_list=img_list,
             transform=tfs_val,
             target_transform=tfs_target

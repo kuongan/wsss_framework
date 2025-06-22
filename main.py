@@ -83,7 +83,6 @@ if __name__ == '__main__':
     
     # Load config
     overwrite_args_from_yaml(args, args.c)
-   
     # voc12
     if args.dataset == 'voc12':
         from utils.datasets import get_voc_class
