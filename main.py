@@ -28,9 +28,9 @@ if __name__ == '__main__':
     # parser.add_argument("--cityscapes_mode", default="fine", type=str, 
     #                     help="fine or coarse")
     # Dataset split
-    parser.add_argument("--train_list", default="./data/voc12/train_aug.txt", type=str)
+    parser.add_argument("--train_list", default="./data/coco/train_id.txt", type=str)
     parser.add_argument("--train_ulb_list", type=str)
-    parser.add_argument("--eval_list", default="./data/voc12/val.txt", type=str,
+    parser.add_argument("--eval_list", default="./data/voc12/val_id.txt", type=str,
                         help="voc12: train/val/trainval/train_aug, cityscapes: train/train_extra(coarse mode)/val/test(fine mode)")
 
     # Paths
@@ -89,6 +89,10 @@ if __name__ == '__main__':
         from utils.datasets import get_voc_class
         args.voc_class = get_voc_class()
         args.voc_class_num = len(args.voc_class)
+    elif args.dataset == 'coco':
+        from utils.datasets import get_coco_class
+        args.coco_class = get_coco_class()
+        args.coco_class_num = len(args.coco_class)
 
     # Make log directory
     if not os.path.exists(args.log_dir):

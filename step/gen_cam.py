@@ -124,7 +124,7 @@ def run(args):
     n_gpus = torch.cuda.device_count()
 
     # Dataset
-    dataset = voc_val_dataset(args, args.eval_list, 'seg')
+    dataset = voc_train_dataset(args, args.eval_list, 'seg')
     # Split Dataset
     dataset = [Subset(dataset, np.arange(i, len(dataset), n_gpus)) for i in range(n_gpus)]
 

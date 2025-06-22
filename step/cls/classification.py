@@ -9,6 +9,7 @@ import torch.distributed as dist
 
 # from torchvision.datasets import VOCSegmentation, VOCDetection
 from utils.datasets import voc_train_dataset, voc_val_dataset, voc_test_dataset
+from utils.datasets import coco_train_dataset, coco_val_dataset
 from torch.utils.data import DataLoader
 # from torch.utils.data.distributed import DistributedSampler
 
@@ -162,7 +163,15 @@ def run(args):
             dataset_train_ulb = voc_train_dataset(args, args.train_ulb_list, 'cls')
         else:
             dataset_train_ulb = None
-
+    elif args.dataset == 'coco':
+        dataset_train = coco_train_dataset(args, args.train_list, 'cls')
+        dataset_val = coco_val_dataset(args, args.eval_list, 'cls')
+        if args.labeled_ratio < 1.0 or args.train_ulb_list:
+            dataset_train_ulb = coco_train_dataset(args, args.train_ulb_list, 'cls')
+        else:
+            dataset_train_ulb = None
+    else:
+        pass
     # # COCO2014
     # elif args.dataset == 'coco':
     #     pass
