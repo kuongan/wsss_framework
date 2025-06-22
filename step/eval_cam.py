@@ -231,11 +231,13 @@ def run(args):
     res = {'segs': {th:[] for th in eval_thres}, 'preds': {th:[] for th in eval_thres}}
     for cam_path in tqdm(cam_list):
         try:
-            logger.info(f"🔍 Reading file: {cam_path}")
+            # logger.info(f"🔍 Reading file: {cam_path}")
             r = np.load(cam_path, allow_pickle=True).item()
             for th in eval_thres:
                 res['segs'][th].append(r['segs'][th])
                 res['preds'][th].append(r['preds'][th])
+            import gc;
+            gc.collect()
         except Exception as e:
             logger.error(f"❌ Error reading {cam_path}: {e}")
         
@@ -247,7 +249,7 @@ def run(args):
         iou, miou = calc_iou(res['preds'][th], res['segs'][th])
         ious.append(iou)
         mious.append(miou)
-        print(f"Threshold {th}: mIoU = {miou:.4f}")
+        logger.info(f"Threshold {th}: mIoU = {miou:.4f}")
     # Find Best thres
     best_miou = max(mious)
     best_idx = mious.index(best_miou)

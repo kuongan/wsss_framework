@@ -67,10 +67,12 @@ def get_cls_optimzier(args, model):
         param_groups = model.get_parameter_groups()
 
         parameters = [
-            {'params': param_groups[0], 'lr': 1 * args.optim['lr']},
-            {'params': param_groups[1], 'lr': 2 * args.optim['lr']},
-            {'params': param_groups[2], 'lr': 10 * args.optim['lr']},
-            {'params': param_groups[3], 'lr': 20 * args.optim['lr']}] 
+            {'params': param_groups[0], 'lr': 1 * args.optim['kwargs']['lr']},
+            {'params': param_groups[1], 'lr': 2 * args.optim['kwargs']['lr']},
+            {'params': param_groups[2], 'lr': 10 * args.optim['kwargs']['lr']},
+            {'params': param_groups[3], 'lr': 20 * args.optim['kwargs']['lr']},
+        ]
+
 
     # ResNets
     elif ('resnet' in args.network) or ('resnext' in args.network) or ('res2net' in args.network):
@@ -99,6 +101,11 @@ def get_cls_optimzier(args, model):
     # Optimizer
     optimizer = optim_method(parameters, **args.optim['kwargs'])
     # Scheduler
-    scheduler = scheduler_method(optimizer, **args.scheduler['kwargs']) if scheduler_method else None
-
+    if scheduler_method:
+        # Ép kiểu an toàn
+        args.scheduler['kwargs']['T_max'] = int(args.scheduler['kwargs']['T_max'])
+        args.scheduler['kwargs']['eta_min'] = float(args.scheduler['kwargs']['eta_min'])
+        scheduler = scheduler_method(optimizer, **args.scheduler['kwargs'])
+    else:
+        scheduler = None
     return optimizer, scheduler

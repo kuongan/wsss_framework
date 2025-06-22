@@ -11,12 +11,12 @@ seed: 42
 labeled_ratio: 1.0
 train_list: ./data/voc12/train_aug.txt
 train_ulb_list: False
-eval_list: ./data/voc12/val.txt
+eval_list: ./data/voc12/train.txt
 verbose_interval: 3
 train:
   input_size: 512
   crop_size: 480
-  batch_size: 32
+  batch_size: 40
   epochs: 20
   loss: 
     name: MultiLabelSoftMarginLoss
@@ -25,8 +25,8 @@ train:
 eval:
   crop_size: 480
   batch_size: 64
-  thres_start: 5
-  thres_limit: 100
+  thres_start: 10
+  thres_limit: 80
   thres_jump: 5
   cam_type: gradcam
   cam_thres: 15

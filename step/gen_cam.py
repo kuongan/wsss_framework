@@ -32,7 +32,7 @@ def _work(pid, dataset, args):
 
     # Log path
     if args.weights_name is None:
-        weights_path = os.path.join(args.log_path, 'best.pth')
+        weights_path = os.path.join(args.log_path, 'final.pth')
     else:
         weights_path = args.weights_name
 
