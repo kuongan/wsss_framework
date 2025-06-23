@@ -215,49 +215,63 @@ def calc_iou(pred, seg):
     return iou, miou
 
 def run(args):
+    import gc
+
     logger.info('Evaluating CAM...')
    
     # set CAM directory path
     args.cam_dir = os.path.join(args.log_path, 'cam')
 
-    # stored CAM file list
-    cam_list = glob.glob(os.path.join(args.cam_dir, '*.npy'))
+    # stored CAM file list (.npz only)
+    cam_list = glob.glob(os.path.join(args.cam_dir, '*.npz'))
     logger.info(f'Reading {len(cam_list)} Object files.')
+
     # Evaluated thresholds
     eval_thres = np.arange(args.eval_thres_start, args.eval_thres_limit, args.eval_thres_jump)
     logger.info(f"Thresholds to evaluate: {eval_thres.tolist()}")
 
     # Read CAM
-    res = {'segs': {th:[] for th in eval_thres}, 'preds': {th:[] for th in eval_thres}}
+    res = {'segs': {th: [] for th in eval_thres}, 'preds': {th: [] for th in eval_thres}}
+
     for cam_path in tqdm(cam_list):
         try:
-            # logger.info(f"🔍 Reading file: {cam_path}")
-            r = np.load(cam_path, allow_pickle=True).item()
-            for th in eval_thres:
-                res['segs'][th].append(r['segs'][th])
-                res['preds'][th].append(r['preds'][th])
-            import gc;
+            # Load .npz file
+            with np.load(cam_path, allow_pickle=True) as r:
+                # Handle multi-threshold format
+                if 'segs' in r and 'preds' in r:
+                    segs = r['segs'].item()
+                    preds = r['preds'].item()
+                    for th in eval_thres:
+                        res['segs'][th].append(segs[th])
+                        res['preds'][th].append(preds[th])
+                # Handle single-threshold file
+                elif 'seg' in r and 'pred' in r:
+                    th = args.eval.get('cam_thres', 15)
+                    res['segs'][th].append(r['seg'])
+                    res['preds'][th].append(r['pred'])
             gc.collect()
         except Exception as e:
             logger.error(f"❌ Error reading {cam_path}: {e}")
-        
+    
     # Calc ious
     ious, mious = [], []
-    logger.info("Calculate ious...")
+    logger.info("Calculate IoUs...")
 
     for th in tqdm(eval_thres):
         iou, miou = calc_iou(res['preds'][th], res['segs'][th])
         ious.append(iou)
         mious.append(miou)
         logger.info(f"Threshold {th}: mIoU = {miou:.4f}")
-    # Find Best thres
+    
+    # Find Best threshold
     best_miou = max(mious)
     best_idx = mious.index(best_miou)
     best_thres = eval_thres[best_idx]
 
     # Print Best mIoU
-    logger.info('Best CAM threshold: %.4f'%best_thres)
+    logger.info('✅ Best CAM threshold: %.4f' % best_thres)
     print_iou(ious[best_idx])
 
-    logger.info('Done Evaluating CAM.\n')
+    logger.info('✅ Done Evaluating CAM.\n')
+
 

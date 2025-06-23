@@ -19,7 +19,7 @@ from pytorch_grad_cam.utils.model_targets import SemanticSegmentationTarget, Cla
 #from pytorch_grad_cam.utils.image import show_cam_on_image
 
 from utils.models import get_model, get_cam_target_layer, get_reshape_transform
-from utils.datasets import voc_train_dataset, voc_val_dataset
+from utils.datasets import voc_train_dataset, voc_val_dataset, coco_train_dataset
 from utils.misc import make_logger
 
 import logging
@@ -37,7 +37,7 @@ def _work(pid, dataset, args):
         weights_path = args.weights_name
 
     # Load model
-    model = get_model(args.network, pretrained=False, num_classes=args.voc_class_num-1)
+    model = get_model(args.network, pretrained=False, num_classes=args.coco_class_num)
     
     # Select CAM
     if args.cam_type == 'gradcam':
@@ -88,13 +88,24 @@ def _work(pid, dataset, args):
              
             # get image classes(without background)
             label = np.unique(seg)
-            label = np.intersect1d(np.arange(1, args.voc_class_num), label)
-            targets = [ClassifierOutputTarget(i-1) for i in label]
-            #print(torch.sigmoid(model(img)), label)
-    
-            # Make CAM
-            img = img.repeat(len(label),1,1,1)
-            pred_cam = make_cam(input_tensor=img, targets=targets)
+            label = np.intersect1d(np.arange(1, args.coco_class_num+1), label)
+            
+            # Process one label at a time to save memory
+            pred_cams = []
+            for i, lbl in enumerate(label):
+                target = [ClassifierOutputTarget(lbl-1)]
+                # Use single image, not repeated
+                single_cam = make_cam(input_tensor=img, targets=target)
+                pred_cams.append(single_cam[0])  # Extract single CAM
+                
+                # Clear cache after each CAM generation
+                torch.cuda.empty_cache()
+            
+            # Stack all CAMs
+            if len(pred_cams) > 0:
+                pred_cam = np.stack(pred_cams, axis=0)
+            else:
+                continue  # Skip if no valid labels
             
             # Add background
             label = np.pad(label, (1,0), mode='constant', constant_values=0)
@@ -106,16 +117,19 @@ def _work(pid, dataset, args):
                 cam_th = np.pad(pred_cam, ((1,0),(0,0),(0,0)), mode='constant', constant_values=th/100)
                 pred = np.argmax(cam_th, axis=0)
                 pred = label[pred]
-                
-                # Append
-                res['segs'][th] = seg
-                res['preds'][th] = pred
-            
-            file_name = os.path.join(args.cam_dir, f'{pid}_{idx}.npy') 
-            np.save(file_name, res)
 
-    # clear gpu cache
-    torch.cuda.empty_cache()
+                # Append
+                res['segs'][th] = seg.astype(np.uint8)
+                res['preds'][th] = pred.astype(np.uint8)
+            # cam_save = {
+            #     'raw_cam': pred_cam,     # (C, H, W)
+            #     'label': label,          # các class tương ứng với mỗi kênh của raw_cam
+            #     'res': res              # cam mask đã threshold theo nhiều mức
+            # }
+            file_name = os.path.join(args.cam_dir, f'{pid}_{idx}.npy') 
+            np.savez_compressed(file_name.replace(".npy", ".npz"), **res)
+            # Clear cache after each image
+        torch.cuda.empty_cache()
 
 def run(args):
     logger.info('Generating CAM...')
@@ -124,7 +138,7 @@ def run(args):
     n_gpus = torch.cuda.device_count()
 
     # Dataset
-    dataset = voc_train_dataset(args, args.eval_list, 'seg')
+    dataset = coco_train_dataset(args, args.eval_list, 'seg')
     # Split Dataset
     dataset = [Subset(dataset, np.arange(i, len(dataset), n_gpus)) for i in range(n_gpus)]
 

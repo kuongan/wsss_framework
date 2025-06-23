@@ -56,7 +56,7 @@ if __name__ == '__main__':
     # CAM background thresholding (percent(0~100%))
     parser.add_argument("--eval_thres_start", default=10, type=float)
     parser.add_argument("--eval_thres_limit", default=80, type=float)
-    parser.add_argument("--eval_thres_jump", default=5, type=float)
+    parser.add_argument("--eval_thres_jump", default=10, type=float)
     #parser.add_argument("--cam_scales", default=(1.0, 0.5, 1.5, 2.0),
     #                    help="Multi-scale inferences") 
     parser.add_argument("--weights_name", default=None, type=str, help="Model file name except directory. ex)resnet50_e150.pth")

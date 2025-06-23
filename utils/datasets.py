@@ -353,11 +353,36 @@ class COCO2014Segmentation(VisionDataset):
 
         if dataset_list is not None:
             with open(dataset_list, 'r') as f:
-                img_names = set(f.read().split())
-            img_id_map = {v['file_name']: k for k, v in self.coco.imgs.items()}
-            self.ids = [img_id_map[name] for name in img_names if name in img_id_map]
+                content = f.read().strip().split()
+            
+            # Check if the first item looks like a filename or an ID
+            if content and ('.' in content[0] or content[0].endswith('.jpg')):
+                # Handle as filenames (original logic)
+                img_names = set(content)
+                img_id_map = {v['file_name']: k for k, v in self.coco.imgs.items()}
+                self.ids = [img_id_map[name] for name in img_names if name in img_id_map]
+                print(f"COCO2014Segmentation: Using filename mode, found {len(self.ids)} images")
+            else:
+                # Handle as image IDs (similar to COCOClassification)
+                target_img_ids = []
+                for id_str in content:
+                    try:
+                        target_img_ids.append(int(id_str))
+                    except ValueError:
+                        print(f"Warning: Could not convert '{id_str}' to integer, skipping")
+                        continue
+                
+                all_img_ids = set(self.coco.getImgIds())
+                self.ids = [img_id for img_id in target_img_ids if img_id in all_img_ids]
+                print(f"COCO2014Segmentation: Using ID mode, found {len(self.ids)} images out of {len(target_img_ids)} requested")
+                
+                if len(self.ids) == 0:
+                    print("ERROR: No matching image IDs found!")
+                    print(f"Sample target IDs: {target_img_ids[:5]}")
+                    print(f"Sample available IDs: {list(all_img_ids)[:5]}")
         else:
             self.ids = list(self.coco.imgs.keys())
+            print(f"COCO2014Segmentation: Using all images, total: {len(self.ids)}")
 
     def __getitem__(self, index):
         img_id = self.ids[index]

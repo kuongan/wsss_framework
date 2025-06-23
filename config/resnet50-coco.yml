@@ -11,7 +11,7 @@ seed: 42
 labeled_ratio: 1.0
 train_list: ./data/coco/train_id.txt
 train_ulb_list: False
-eval_list: ./data/coco/val_5000.txt
+eval_list: ./data/coco/train_id.txt
 verbose_interval: 2 
 train:
   input_size: 512
@@ -27,14 +27,13 @@ eval:
   batch_size: 64
   thres_start: 10
   thres_limit: 80
-  thres_jump: 5
+  thres_jump: 10
   cam_type: gradcam
   cam_thres: 15
   multi_scale:
     - 1.0
     - 0.5
     - 1.5
-    - 2.0
 optim:
   name: AdamW
   kwargs:
